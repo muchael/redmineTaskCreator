@@ -1,5 +1,5 @@
-username = 'ddd'
-password = 'ddd'
+username = 'lucas.aguiar'
+password = 'cass91097273'
 
 
 
@@ -40,23 +40,28 @@ def open_file(path):
 def parseToIssues(tasks):
 
     projectId = '258'
-    trackerId = '7'
-    parentId = '25581'
+    trackerId = '16'
+    parentId = '27273'
     authorId = '39'
 
     for workPackageName, value in tasks.items():
-        workPackageIssue = Issue( projectId, trackerId, authorId, parentId )
-        workPackageIssue.setSubject(workPackageName)
+        # workPackageIssue = Issue( projectId, trackerId, authorId, parentId )
+        # workPackageIssue.setSubject(workPackageName)
 
-        print(postIssues(workPackageIssue)) PAREI AQUI SE LEMBRE
+        #print(postIssues(workPackageIssue)) #PAREI AQUI SE LEMBRE
 
-    return workPackageIssue
+        for issue in value:
+            issueObject = Issue( projectId, trackerId, authorId, parentId )
+            issueObject.setSubject(issue['issueName'])
+            issueObject.setHours(issue['hours'])
+
+            print(postIssues(issueObject))
+
+    # return workPackageIssue
 
 def postIssues( issue ):
     payload = json.dumps(issue.toJson())
     
-    print(payload)
-
     r = requests.post("https://projetos.eits.com.br/issues.json",
                     auth=(username, password),
                     data= payload,
