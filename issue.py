@@ -2,10 +2,9 @@
 
 class Issue( object ):
 
-    def __init__( self, projectId, trackerId, authorId, parentId, subject, description, estimated_hours, requisitos ):
+    def __init__( self, projectId, trackerId, parentId, subject, description, estimated_hours, requisitos ):
         self.project_id = projectId
         self.tracker_id = trackerId
-        self.author_id = authorId
         self.parent_issue_id = parentId
         self.assigned_to_id = 76        #pair-codeknights
         self.custom_fields = [ { 'value':'1', 'id':'14' } ] #Situação Planejado
@@ -39,7 +38,6 @@ class Issue( object ):
                         'tracker_id': self.tracker_id,
                         'status_id':  self.status_id,
                         'priority_id':self.priority_id,
-                        'author_id': self.author_id,
                         'parent_issue_id': self.parent_issue_id,
                         'subject': self.subject,
                         'assigned_to_id': self.assigned_to_id,
