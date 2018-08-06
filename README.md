@@ -39,12 +39,8 @@ positional arguments:
 optional arguments:
   -h, --help            Mostra essa ajuda e sai
   -u USER, --user USER  Usuário do redmine
-  -p PROJECT, --project PROJECT 
-                        Id do projeto que irá receber as ativiades no redmine
-  -r RELATIVE, --relative RELATIVE
+  -p PARENT, --parent PARENT
                         Id da tarefa pai das tarefas a serem criadas (Id da sprint?)
-  -a ASSIGNEDTO, --assignedTo ASSIGNEDTO
-                        Id do usuário que as tarefas serão atribuídas
   -v, --verbose         Aumenta a verbosidade da saída do programa
 ```
 

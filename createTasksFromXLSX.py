@@ -1,13 +1,49 @@
 # -*- coding: UTF-8 -*-
 from __future__ import print_function
 import xlrd, json, requests, getpass, argparse
-from issue import Issue
 
 #----------------------------------------------------------------------
 
-username = None
-password = None
+class Issue( object ):
 
+    def __init__( self, project, trackerId, parentId, subject, description, estimated_hours, requisitos, assigned_to ):
+        print ( assigned_to )
+        self.project = project
+        self.tracker_id = trackerId
+        self.parent_issue_id = parentId
+        self.assigned_to = assigned_to
+        self.custom_fields = [ { 'value':'1', 'id':'14' } ] #Situação Planejado
+
+        if requisitos:
+            self.custom_fields.append({ 'id': '3', 'value': requisitos })
+        
+        self.id = None
+        self.status_id= 20  # Status 'To Do'
+        self.priority_id= 2 #Prioridade normal
+
+        self.subject= subject
+        self.description = description
+        self.estimated_hours = estimated_hours
+
+    def toJson(self):
+        dictIssue = {
+                        'project_id': self.project['id'],
+                        'tracker_id': self.tracker_id,
+                        'status_id':  self.status_id,
+                        'priority_id':self.priority_id,
+                        'parent_issue_id': self.parent_issue_id,
+                        'subject': self.subject,
+                        'assigned_to_id': self.assigned_to['id'],
+                        'custom_fields': self.custom_fields
+                    }
+
+        if self.description:
+            dictIssue['description'] = self.description
+
+        if self.estimated_hours:
+            dictIssue['estimated_hours'] = self.estimated_hours
+        
+        return { "issue": dictIssue }
 
 def process_file(path, projectId, parentId, assignedTo):
     """
@@ -32,9 +68,9 @@ def process_file(path, projectId, parentId, assignedTo):
             issue = None
 
             if workpackage:
-                issue = Issue( projectId, 7, parentId, name[4:], description, points, requirements, assignedTo )
+                issue = Issue( { 'id' : projectId }, 7, parentId, name[4:], description, points, requirements, { 'id' : assignedTo })
             else:
-                issue = Issue( projectId, 16, currentWorkPackageId, name, description, points, requirements, assignedTo )
+                issue = Issue( { 'id' : projectId }, 16, currentWorkPackageId, name, description, points, requirements, { 'id' : assignedTo })
 
             issueSaved = postIssues( issue )
 
@@ -46,7 +82,7 @@ def postIssues( issue ):
     payload = json.dumps(issue.toJson())
     
     if verbose:
-        print("Cadastrando tarefa - ", issue.getSubject(), ".............................", end = '')
+        print("Cadastrando tarefa - ", issue.subject, ".............................", end = '')
 
     r = requests.post("https://projetos.eits.com.br/issues.json",
                     auth=(username, password),
@@ -63,30 +99,26 @@ def postIssues( issue ):
 
     return json.loads(r.text)
 
-def checkUser():
-    r = requests.get("https://projetos.eits.com.br/issues.json?offset=0&limit=1",
-                    auth=(username, password)
-                    )
-
-    checkReturnCode( 200, r.status_code)
-
-def getProjectName( projectId ):
-    r = requests.get("https://projetos.eits.com.br/projects/" + str(projectId) + ".json",
-                    auth=(username, password)
-                    )
-
-    checkReturnCode( 200, r.status_code)
-
-    return json.loads(r.text)['project']['name']
-
-def getIssueName( issueId ):
+def getIssue( issueId ):
     r = requests.get("https://projetos.eits.com.br/issues/" + str(issueId) + ".json",
                     auth=(username, password)
                     )
 
     checkReturnCode( 200, r.status_code)
 
-    return json.loads(r.text)['issue']['subject']
+    issueDict = json.loads(r.text)
+
+    issue = Issue( issueDict['issue']['project'],
+        issueDict['issue']['tracker']['id'],
+        issueDict['issue']['parent']['id'],
+        issueDict['issue']['subject'],
+        issueDict['issue']['description'],
+        issueDict['issue']['estimated_hours'] if 'estimated_hours' in issueDict['issue'] else None,
+        issueDict['issue']['custom_fields'][0]['id'] if 'custom_fields' in issueDict['issue'] else None,
+        issueDict['issue']['assigned_to']
+    )
+
+    return issue
 
 def checkReturnCode( expected, code ):
     if expected == code:
@@ -107,9 +139,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("filePath", help="Caminho do arquivo xlsx com as atividades a serem cadastradas.")
     parser.add_argument("-u", "--user", help="Usuário do redmine.")
-    parser.add_argument("-p", "--project", help="Id do projeto que irá receber as ativiades no redmine.", type=int)
-    parser.add_argument("-r", "--relative", help="Id da tarefa pai das tarefas a serem criadas (Id da sprint?).", type=int)
-    parser.add_argument("-a", "--assignedTo", help="Id do usuário que a tarefa será atribuída.", type=int)
+    parser.add_argument("-p", "--parent", help="Id da tarefa pai das tarefas a serem criadas (Id da sprint?).", type=int)
     parser.add_argument("-v", "--verbose", help="Aumenta a verbosidade da saída do programa", action="store_true")
     args = parser.parse_args()
 
@@ -128,21 +158,16 @@ def main():
 
     password = getpass.getpass("Senha: ")
 
-    checkUser()
+    parentId = args.parent if args.parent else int(raw_input("Id da tarefa pai: "))
 
-    projectId = args.project if args.project else int(raw_input("Id do projeto: "))
-
-    if verbose:
-        print( "Projeto: " + getProjectName( projectId ) )
-
-    parentId = args.relative if args.relative else int(raw_input("Id da tarefa pai: "))
+    parentIssue = getIssue( parentId )
 
     if verbose:
-        print( "Tarefa pai: " + getIssueName( parentId ) )
+        print( "Projeto: " + parentIssue.project['name'] )
+        print( "Tarefa pai: " + parentIssue.subject )
+        print( "Atribuido para: " + parentIssue.assigned_to['name'] )
 
-    assignedTo = args.assignedTo if args.assignedTo else int(raw_input("Id da usuário responsável pela tarefa: "))
-
-    process_file( args.filePath, projectId, parentId, assignedTo)
+    process_file( args.filePath, parentIssue.project['id'], parentId, parentIssue.assigned_to['id'])
     # test()
 
 def test():
