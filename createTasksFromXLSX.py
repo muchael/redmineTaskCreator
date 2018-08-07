@@ -7,7 +7,6 @@ import xlrd, json, requests, getpass, argparse
 class Issue( object ):
 
     def __init__( self, project, trackerId, parentId, subject, description, estimated_hours, requisitos, assigned_to ):
-        print ( assigned_to )
         self.project = project
         self.tracker_id = trackerId
         self.parent_issue_id = parentId
@@ -82,18 +81,13 @@ def postIssues( issue ):
     payload = json.dumps(issue.toJson())
     
     if verbose:
-        print("Cadastrando tarefa - ", issue.subject, ".............................", end = '')
+        print("Cadastrando tarefa: ", issue.subject)
 
     r = requests.post("https://projetos.eits.com.br/issues.json",
                     auth=(username, password),
                     data= payload,
                     headers = {'content-type': 'application/json'}
                     )
-
-    if verbose and (r.status_code == 201):
-        print("FEITO")
-    else:
-        print()
 
     checkReturnCode( 201, r.status_code)
 
@@ -115,7 +109,7 @@ def getIssue( issueId ):
         issueDict['issue']['description'],
         issueDict['issue']['estimated_hours'] if 'estimated_hours' in issueDict['issue'] else None,
         issueDict['issue']['custom_fields'][0]['id'] if 'custom_fields' in issueDict['issue'] else None,
-        issueDict['issue']['assigned_to']
+        issueDict['issue']['assigned_to'] if 'assigned_to' in issueDict['issue'] else None
     )
 
     return issue
@@ -161,6 +155,10 @@ def main():
     parentId = args.parent if args.parent else int(raw_input("Id da tarefa pai: "))
 
     parentIssue = getIssue( parentId )
+
+    if not parentIssue.assigned_to:
+        print( "A tarefa pai deve estar atribuída para alguém para que as tarefas criadas sejam atribuídas para o mesmo usuário. ")
+        exit()
 
     if verbose:
         print( "Projeto: " + parentIssue.project['name'] )

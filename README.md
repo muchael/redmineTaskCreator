@@ -2,7 +2,7 @@
 Script que auxilia a criação de tasks no Redmine a partir de uma planilha XLS.
 
 Exemplo:
-[![asciicast](https://asciinema.org/a/zoJjFUqXRcmtBIzFu8Q8MNkCo.png)](https://asciinema.org/a/zoJjFUqXRcmtBIzFu8Q8MNkCo)
+[![asciicast](https://asciinema.org/a/bruC4ANbOQ2N86fg0Sn3HuRqT.png)](https://asciinema.org/a/bruC4ANbOQ2N86fg0Sn3HuRqT)
 
 ## Planilha
 O formato da planilha deve ser o seguinte ([exemplo](xls/teste.xlsx)):
@@ -29,7 +29,7 @@ A tag `[A]` é removida na hora de cadastrar a tarefa.
 
 ## Modo de utilização
 ```sh
-python createTasksFromXLSX.py [-h] [-u USER] [-p PROJECT] [-r RELATIVE]
+python createTasksFromXLSX.py [-h] [-u USER] [-p PARENT]
                               [-a ASSIGNEDTO] [-v]
                               filePath
                               
@@ -43,6 +43,8 @@ optional arguments:
                         Id da tarefa pai das tarefas a serem criadas (Id da sprint?)
   -v, --verbose         Aumenta a verbosidade da saída do programa
 ```
+
+A tarefa pai deve estar atribuída para algum usuário pois as tarefas criadas serão atribuídas para este mesmo usuário.
 
 ## License
 
