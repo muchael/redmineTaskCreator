@@ -104,7 +104,7 @@ def getIssue( issueId ):
 
     issue = Issue( issueDict['issue']['project'],
         issueDict['issue']['tracker']['id'],
-        issueDict['issue']['parent']['id'],
+        issueDict['issue']['parent']['id'] if 'parent' in issueDict['issue'] else None,
         issueDict['issue']['subject'],
         issueDict['issue']['description'],
         issueDict['issue']['estimated_hours'] if 'estimated_hours' in issueDict['issue'] else None,
